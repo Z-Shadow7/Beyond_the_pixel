@@ -29,13 +29,12 @@ project/
 │   ├── models/
 │   │   ├── image_detector.py
 │   │   ├── video_detector.py
-│   │
-│   ├── dfdc_deepfake_challenge/
+│   ├── uploads/
+|
+├── dfdc_deepfake_challenge/
 │   │   ├── training/
 │   │   ├── weights/
-│   │
-│   ├── uploads/
-│
+|
 ├── frontend/
 │   ├── src/
 │   │   ├── App.tsx
@@ -56,6 +55,12 @@ project/
 cd backend
 pip install -r requirements.txt
 ````
+### clone dfdc_deepfake_challenge
+``` https://github.com/selimsef/dfdc_deepfake_challenge.git ```
+### Download final_111_DeepFakeClassifier_tf_efficientnet_b7_ns_0_36
+``` https://github.com/selimsef/dfdc_deepfake_challenge/releases ```
+### Paste it in 
+``` ./dfdc_deepfake_challenge/weights/ ```
 
 ---
 
