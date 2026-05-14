@@ -472,4 +472,4 @@ Full-stack deepfake detection system integrating Effort (ICML 2025), GenConViT, 
 For educational and research purposes only. The project integrates several open-source models with their respective licenses:
 - **Effort**: As per original repository
 - **GenConViT**: As per original repository
-- **DFDC Challenge**: As per original repository
+
