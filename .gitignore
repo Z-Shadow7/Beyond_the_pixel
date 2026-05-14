@@ -224,8 +224,10 @@ backend/outputs/
 # test files
 test.py
 
-# dfdc_deepfake_detection
+# github models
 dfdc_deepfake_challenge/
+Effort-AIGI-Detection-main/
+GenConViT/
 
 # node_modules
 frontend/node_modules/

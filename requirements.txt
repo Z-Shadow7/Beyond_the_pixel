@@ -25,3 +25,14 @@ einops
 
 huggingface_hub
 safetensors
+
+
+#for version 2
+imutils
+scikit-image
+loralib 
+efficientnet_pytorch   
+tensorboard     
+
+training.config.default
+albumentations

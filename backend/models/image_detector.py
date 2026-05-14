@@ -7,92 +7,100 @@ from facenet_pytorch import MTCNN
 import albumentations as A
 
 # =========================================================
-# FIX PYTHON PATH (IMPORTANT)
+# PATH
 # =========================================================
-# Add workspace root to Python path
-WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
-if WORKSPACE_ROOT not in sys.path:
-    sys.path.insert(0, WORKSPACE_ROOT)
 
-# Define DFDC_PATH
-DFDC_PATH = os.path.join(WORKSPACE_ROOT, 'dfdc_deepfake_challenge')
+WORKSPACE_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../../')
+)
 
-from dfdc_deepfake_challenge.training.zoo.classifiers import DeepFakeClassifier
+EFFORT_PATH = os.path.join(
+    WORKSPACE_ROOT,
+    'Effort-AIGI-Detection-main',
+    'DeepfakeBench'
+)
 
+if EFFORT_PATH not in sys.path:
+    sys.path.insert(0, EFFORT_PATH)
+
+# =========================================================
+# IMPORT DETECTOR
+# =========================================================
+
+from training.detectors import DETECTOR
 
 # =========================================================
 # DEVICE
 # =========================================================
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+# =========================================================
+# LOAD MODEL
+# =========================================================
 
-# =========================================================
-# LOAD MODEL (ONCE)
-# =========================================================
-model = DeepFakeClassifier(
-    encoder="tf_efficientnet_b7_ns"
-).to(device)
+cfg = {}
+
+model = DETECTOR["effort"](cfg).to(device)
 
 checkpoint_path = os.path.join(
-    DFDC_PATH,
+    EFFORT_PATH,
+    "training",
     "weights",
-    "final_111_DeepFakeClassifier_tf_efficientnet_b7_ns_0_36"
+    "effort_clip_L14_trainOn_FaceForensic.pth"
 )
 
 checkpoint = torch.load(
     checkpoint_path,
-    map_location=device,
-    weights_only=False
+    map_location=device
 )
 
-# extract state dict
 if "state_dict" in checkpoint:
-    state_dict = checkpoint["state_dict"]
-elif "model_state_dict" in checkpoint:
-    state_dict = checkpoint["model_state_dict"]
+    model.load_state_dict(checkpoint["state_dict"], strict=False)
 else:
-    state_dict = checkpoint
+    model.load_state_dict(checkpoint, strict=False)
 
-# remove DataParallel prefix if exists
-new_state_dict = {}
-
-for k, v in state_dict.items():
-    new_state_dict[k.replace("module.", "")] = v
-
-model.load_state_dict(new_state_dict, strict=False)
 model.eval()
 
-print("✅ DFDC Model Loaded Successfully")
-
+print("✅ Effort Model Loaded Successfully")
 
 # =========================================================
 # FACE DETECTOR
 # =========================================================
+
 mtcnn = MTCNN(
-    image_size=380,
+    image_size=224,
     margin=20,
     keep_all=False,
     device=device
 )
 
+# =========================================================
+# TRANSFORM
+# =========================================================
 
-# =========================================================
-# IMAGE TRANSFORM
-# =========================================================
 transform = A.Compose([
-    A.Resize(380, 380)
+    A.Resize(224, 224)
 ])
-
 
 # =========================================================
 # MAIN FUNCTION
 # =========================================================
+
 def detect_fake_image(image_path):
 
     try:
+
+        # =================================================
+        # LOAD IMAGE
+        # =================================================
+
         img = Image.open(image_path).convert("RGB")
 
-        # detect face
+        # =================================================
+        # DETECT FACE
+        # =================================================
+
         face = mtcnn(img)
 
         if face is None:
@@ -101,34 +109,77 @@ def detect_fake_image(image_path):
                 "error": "No face detected"
             }
 
-        # tensor -> numpy
-        face = face.permute(1, 2, 0).numpy()
+        # =================================================
+        # PREPROCESS
+        # =================================================
+
+        face = face.permute(1, 2, 0).cpu().numpy()
+
         face = (face * 255).astype(np.uint8)
 
-        # resize
         face = transform(image=face)["image"]
 
-        # normalize
         face = face.astype(np.float32) / 255.0
+
+        mean = np.array([0.485, 0.456, 0.406])
+        std = np.array([0.229, 0.224, 0.225])
+
+        face = (face - mean) / std
 
         # HWC -> CHW
         face = np.transpose(face, (2, 0, 1))
 
-        # batch
+        # batch dimension
         face = np.expand_dims(face, axis=0)
 
         tensor = torch.tensor(face).float().to(device)
 
-        # inference
-        with torch.no_grad():
-            output = model(tensor)
-            score = torch.sigmoid(output).cpu().numpy()[0][0]
+        # =================================================
+        # INFERENCE
+        # =================================================
 
-        # interpretation
+        with torch.no_grad():
+
+            data_dict = {
+                "image": tensor
+            }
+
+            output = model(data_dict)
+
+            print("OUTPUT TYPE:", type(output))
+            print("OUTPUT:", output)
+
+            # handle dict outputs
+            if isinstance(output, dict):
+
+                print("DICT KEYS:", output.keys())
+
+                if "prob" in output:
+                    output = output["prob"]
+
+                elif "pred" in output:
+                    output = output["pred"]
+
+                elif "logits" in output:
+                    output = output["logits"]
+
+            print("FINAL OUTPUT SHAPE:", output.shape)
+
+            output = output.flatten()
+            print(output)
+
+            score = output[0].item()
+
+        # =================================================
+        # LABEL
+        # =================================================
+
         if score < 0.40:
             label = "LIKELY REAL"
+
         elif score < 0.60:
             label = "SUSPICIOUS"
+
         else:
             label = "LIKELY FAKE"
 
@@ -139,6 +190,7 @@ def detect_fake_image(image_path):
         }
 
     except Exception as e:
+
         return {
             "success": False,
             "error": str(e)
