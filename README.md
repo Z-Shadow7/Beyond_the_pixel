@@ -242,7 +242,7 @@ Full-stack deepfake detection system built using DFDC-trained models and FastAPI
 # 📄 License
 
 For educational and research purposes only.
-
+- **DFDC Challenge**: As per original repository
 
 
 
