@@ -76,7 +76,15 @@ def predict_frame(image_path):
             output = output[0]
 
         # Flatten and take mean if output has multiple elements
-        if output.numel() > 1:
-            output = output.mean()
-        
-        return torch.sigmoid(output).item()
+        with torch.no_grad():
+
+            output = model(tensor)
+
+            if isinstance(output, (tuple, list)):
+                output = output[0]
+
+            probs = torch.softmax(output, dim=1)
+
+            fake_score = probs[:, 0].mean().item()
+
+            return fake_score
