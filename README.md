@@ -68,12 +68,6 @@ Beyond_the_pixel/
 │   ├── dataset/
 │   └── ...
 │
-├── dfdc_deepfake_challenge/             # DFDC model repository
-│   ├── training/
-│   ├── preprocessing/
-│   ├── configs/
-│   └── ...
-│
 ├── requirements.txt
 ├── README.md
 └── RESEARCH_PAPER.md
