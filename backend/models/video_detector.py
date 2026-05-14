@@ -38,12 +38,18 @@ def detect_fake_video(video_path):
             "error": "No valid frames processed"
         }
 
-    avg_score = sum(scores) / len(scores)
+    scores = sorted(scores)
 
-    if avg_score < 0.4:
+    top_k = max(1, int(len(scores) * 0.2))
+
+    top_scores = scores[-top_k:]
+
+    avg_score = sum(top_scores) / len(top_scores)
+
+    if avg_score < 0.65:
         label = "LIKELY REAL"
 
-    elif avg_score < 0.6:
+    elif avg_score < 0.85:
         label = "SUSPICIOUS"
 
     else:

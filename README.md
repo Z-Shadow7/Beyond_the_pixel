@@ -67,6 +67,7 @@ Beyond_the_pixel/
 │   ├── train/
 │   ├── dataset/
 │   └── ...
+│
 ├── requirements.txt
 ├── README.md
 └── RESEARCH_PAPER.md
