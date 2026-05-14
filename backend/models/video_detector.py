@@ -1,5 +1,6 @@
 import cv2
-from models.image_detector import detect_fake_image
+from models.genconvit_detector import predict_frame
+
 
 def detect_fake_video(video_path):
 
@@ -11,22 +12,23 @@ def detect_fake_video(video_path):
     while cap.isOpened():
 
         ret, frame = cap.read()
+
         if not ret:
             break
 
         frame_count += 1
 
-        # sample every 5th frame
+        # Analyze every 5th frame
         if frame_count % 5 != 0:
             continue
 
         temp_path = "temp_frame.jpg"
+
         cv2.imwrite(temp_path, frame)
 
-        result = detect_fake_image(temp_path)
+        score = predict_frame(temp_path)
 
-        if result["success"]:
-            scores.append(result["deepfake_score"])
+        scores.append(score)
 
     cap.release()
 
@@ -40,8 +42,10 @@ def detect_fake_video(video_path):
 
     if avg_score < 0.4:
         label = "LIKELY REAL"
+
     elif avg_score < 0.6:
         label = "SUSPICIOUS"
+
     else:
         label = "LIKELY FAKE"
 
